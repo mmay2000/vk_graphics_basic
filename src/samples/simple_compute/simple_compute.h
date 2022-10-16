@@ -79,15 +79,17 @@ private:
   VkPipeline m_pipeline;
   VkPipelineLayout m_layout;
 
-  VkBuffer m_A, m_B, m_sum;
+  VkBuffer m_A, m_sum;
  
+  std::vector<double> m_B, m_C;
+
   void CreateInstance();
   void CreateDevice(uint32_t a_deviceId);
 
   void BuildCommandBufferSimple(VkCommandBuffer a_cmdBuff, VkPipeline a_pipeline);
 
   void SetupSimplePipeline();
-  void CreateComputePipeline();
+  void CreateComputePipeline(const char* shaderfilename);
   void CleanupPipeline();
 
   void Cleanup();

@@ -8,23 +8,25 @@ layout( push_constant ) uniform params {
 
 layout(std430, binding = 0) buffer a 
 {
-    float A[];
+    double A[];
 };
 
-layout(std430, binding = 1) buffer b
-{
-    float B[];
-};
 
-layout(std430, binding = 2) buffer Sum
+layout(std430, binding = 1) buffer Sum
 {
-    float sum[];
+    double sum[];
 };
 
 void main() 
 {
+
     uint idx = gl_GlobalInvocationID.x;
     if (idx < PushConstant.len) {
-        sum[idx] = A[idx] + B[idx];
+        double filtredValue = 0.0;
+        for(int i = -3; i < 4; ++i)
+            if ((idx + i < PushConstant.len)&&(idx + i >= 0))
+                filtredValue += A[idx + i] / 7.0;    
+            sum[idx] = A[idx] - filtredValue;
     }
+    
 }
