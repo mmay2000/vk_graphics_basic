@@ -46,7 +46,7 @@ private:
   etna::Image mainViewDepth;
   etna::Image shadowMap;
   etna::Sampler defaultSampler;
-  etna::Buffer constants;
+  etna::Buffer constants, matrixBuffer, InstanceNumberBuffer, visibleBuffer, indirectInfo;
 
   VkCommandPool    m_commandPool    = VK_NULL_HANDLE;
 
@@ -67,14 +67,24 @@ private:
     float4x4 model;
   } pushConst2M;
 
+  struct
+  {
+    float4x4 projView;
+    Box4f bb;
+    uint32_t instanceNumber;
+  } pushConst2Cull;
+
   float4x4 m_worldViewProj;
   float4x4 m_lightMatrix;    
 
   UniformParams m_uniforms {};
-  void* m_uboMappedMem = nullptr;
+  void* m_uboMappedMem = nullptr, * m_boInstanceMatrix = nullptr, * m_boInstanceNumber = nullptr, 
+      * m_boVisInstance = nullptr, * m_cmInfoIndir = nullptr;
+  uint32_t m_InstanceLine = 100;
 
   etna::GraphicsPipeline m_basicForwardPipeline {};
   etna::GraphicsPipeline m_shadowPipeline {};
+  etna::ComputePipeline m_cullingPipeline{};
 
   std::shared_ptr<vk_utils::DescriptorMaker> m_pBindings = nullptr;
   
@@ -94,8 +104,8 @@ private:
   std::shared_ptr<SceneManager>     m_pScnMgr;
   
   std::shared_ptr<vk_utils::IQuad>               m_pFSQuad;
-  VkDescriptorSet       m_quadDS; 
-  VkDescriptorSetLayout m_quadDSLayout = nullptr;
+  VkDescriptorSet       m_quadDS, m_cullingDS; 
+  VkDescriptorSetLayout m_quadDSLayout = nullptr, m_cullingDSLayout;
 
   struct InputControlMouseEtc
   {
@@ -131,6 +141,10 @@ private:
   void CreateDevice(uint32_t a_deviceId);
 
   void BuildCommandBufferSimple(VkCommandBuffer a_cmdBuff, VkImage a_targetImage, VkImageView a_targetImageView);
+
+  void FillCullingBuffers();
+
+  void RunFrustumCulling(VkCommandBuffer a_cmdBuff, const float4x4 &a_wvp);
 
   void DrawSceneCmd(VkCommandBuffer a_cmdBuff, const float4x4& a_wvp);
 
