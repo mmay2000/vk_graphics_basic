@@ -21,8 +21,11 @@ void SimpleShadowmapRender::UpdateView()
   auto mLookAt = LiteMath::lookAt(m_cam.pos, m_cam.lookAt, m_cam.up);
   auto mWorldViewProj = mProjFix * mProj * mLookAt;
   
-  m_worldViewProj = mWorldViewProj;
+  transformsInv.projInv = LiteMath::inverse4x4(mProjFix * mProj);
+  transformsInv.viewInv = LiteMath::inverse4x4(mLookAt);
   
+  m_worldViewProj = mWorldViewProj;
+
   ///// calc light matrix
   //
   if(m_light.usePerspectiveM)
@@ -37,6 +40,7 @@ void SimpleShadowmapRender::UpdateView()
   
   mLookAt       = LiteMath::lookAt(m_light.cam.pos, m_light.cam.pos + m_light.cam.forward()*10.0f, m_light.cam.up);
   m_lightMatrix = mProjFix*mProj*mLookAt;
+  
 }
 
 void SimpleShadowmapRender::UpdateUniformBuffer(float a_time)

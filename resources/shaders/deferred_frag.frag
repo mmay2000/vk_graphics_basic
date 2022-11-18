@@ -7,20 +7,29 @@
 layout(location = 0) out vec4 gNorm;
 layout(location = 1) out vec4 gAlbedoSpec;
 
+layout(binding = 0, set = 0) uniform AppData
+{
+    UniformParams Params;
+};
+
 layout (location = 0 ) in VS_OUT
 {
     vec3 wPos;
     vec3 wNorm;
-    vec3 wTangent;
+    vec3 color;
     vec2 texCoord;
 } surf;
 
 
+layout(push_constant) uniform params_t
+{
+    mat4 mProjView;
+    mat4 mModel;
+} params;
 
 void main()
 {
-    gNorm = vec4(0.5f*normalize(surf.wNorm) + vec3(0.5f), 1);
+    gNorm = vec4(0.5f*(surf.wNorm) + vec3(0.5f), 1.0f);
 
-    gAlbedoSpec.rgb = vec3(0.26f, 0.53f, 0.96f);
-    gAlbedoSpec.a = 0.8f;
+    gAlbedoSpec = vec4(surf.color, 1.0f);
 }

@@ -44,9 +44,7 @@ public:
 private:
   etna::GlobalContext* m_context;
   etna::Image mainViewDepth;
-  etna::Image shadowMap;
-  etna::Image gNorms;
-  etna::Image gAlbedoSpec;
+  etna::Image shadowMap, gNorms, gAlbedoSpec;
   etna::Sampler defaultSampler;
   etna::Buffer constants;
 
@@ -69,6 +67,13 @@ private:
     float4x4 model;
   } pushConst2M;
 
+  struct
+  {
+    float4 scaleAndOffs;
+    float4x4 projInv;
+    float4x4 viewInv;
+  } transformsInv;
+
   float4x4 m_worldViewProj;
   float4x4 m_lightMatrix;    
 
@@ -77,9 +82,9 @@ private:
 
   etna::GraphicsPipeline m_basicForwardPipeline {};
   etna::GraphicsPipeline m_shadowPipeline {};
-  etna::GraphicsPipeline m_deferredPipelne{};
+  etna::GraphicsPipeline m_gBufferCreationPipelne {};
 
-  std::shared_ptr<vk_utils::DescriptorMaker> m_pBindings = nullptr;
+  std::shared_ptr<vk_utils::DescriptorMaker> m_pBindings = nullptr, m_pDeferredBindings = nullptr;
   
   VkSurfaceKHR m_surface = VK_NULL_HANDLE;
   VulkanSwapChain m_swapchain;
@@ -96,9 +101,9 @@ private:
 
   std::shared_ptr<SceneManager>     m_pScnMgr;
   
-  std::shared_ptr<vk_utils::IQuad> m_pFSQuad, m_pFSQuadGBuff;
-  VkDescriptorSet       m_quadDS, m_gBuffDS; 
-  VkDescriptorSetLayout m_quadDSLayout = nullptr, m_gBuffDSLayout = nullptr;
+  std::shared_ptr<vk_utils::IQuad>               m_pFSQuad;
+  VkDescriptorSet       m_quadDS; 
+  VkDescriptorSetLayout m_quadDSLayout = nullptr;
 
   struct InputControlMouseEtc
   {
@@ -140,6 +145,8 @@ private:
   void loadShaders();
 
   void SetupSimplePipeline();
+  void SetupDeferredPipeline();
+
   void RecreateSwapChain();
 
   void UpdateUniformBuffer(float a_time);

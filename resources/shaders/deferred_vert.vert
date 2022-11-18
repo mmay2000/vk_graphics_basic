@@ -1,0 +1,48 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+layout(location = 0) in vec4 vPosNorm;
+layout(location = 1) in vec4 vTexCoordAndTang;
+layout(push_constant) uniform params_t
+{
+  vec4 scaleAndOffs;
+  mat4 mProjInverse;
+  mat4 mViewInverse;
+} params;
+
+layout (location = 0 ) out VS_OUT
+{
+  vec2 texCoord;
+} vOut;
+
+void main(void)
+{
+/*
+  if(gl_VertexIndex == 0)
+  {
+    gl_Position   = vec4(-1.0f*params.scaleAndOffs.x + params.scaleAndOffs.z, -1.0f*params.scaleAndOffs.y + params.scaleAndOffs.w, 0.0f, 1.0f);
+    vOut.texCoord = vec2(0.0f, 0.0f);
+  }
+  else if(gl_VertexIndex == 1) 
+  {
+    gl_Position   = vec4(-1.0f*params.scaleAndOffs.x + params.scaleAndOffs.z, +1.0f*params.scaleAndOffs.y + params.scaleAndOffs.w, 0.0f, 1.0f);
+    vOut.texCoord = vec2(0.0f, 1.0f);
+  }
+  else if(gl_VertexIndex == 2) 
+  {
+    gl_Position   = vec4(+1.0f*params.scaleAndOffs.x + params.scaleAndOffs.z, -1.0f*params.scaleAndOffs.y + params.scaleAndOffs.w, 0.0f, 1.0f);
+    vOut.texCoord = vec2(1.0f, 0.0f);
+  }
+  else
+  { 
+    gl_Position   = vec4(+1.0f*params.scaleAndOffs.x + params.scaleAndOffs.z, +1.0f*params.scaleAndOffs.y + params.scaleAndOffs.w, 0.0f, 1.0f);
+    vOut.texCoord = vec2(1.0f, 1.0f);
+  }
+
+  gl_Position.y = -gl_Position.y;
+  */
+  vec2 xy = gl_VertexIndex == 0 ? vec2(-1, -1) : (gl_VertexIndex == 1 ? vec2(3, -1) : vec2(-1, 3));
+  gl_Position   = vec4(xy*vec2(1,-1), 0, 1);
+  vOut.texCoord = xy * 0.5 + 0.5;
+}
+
