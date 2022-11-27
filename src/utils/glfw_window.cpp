@@ -207,6 +207,9 @@ void mainLoop(std::shared_ptr<IRender> &app, GLFWwindow* window, bool displayGUI
     UpdateCamera(window, g_appInput.cams[currCam], static_cast<float>(diffTime));
     
     app->ProcessInput(g_appInput);
+
+    g_appInput.cams[0].pos += LiteMath::float3(0.001f*sinf(lastTime),0 , 0.002f*cosf(2*lastTime));
+    g_appInput.cams[1].pos += LiteMath::float3(-0.002f*sinf(lastTime),0 ,0.002f*cosf(lastTime));
     app->UpdateCamera(g_appInput.cams, 2);
     if(displayGUI)
       app->DrawFrame(static_cast<float>(thisTime), DrawMode::WITH_GUI);

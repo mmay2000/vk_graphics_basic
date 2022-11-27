@@ -146,7 +146,7 @@ void SimpleShadowmapRender::SetupSimplePipeline()
 {
   std::vector<std::pair<VkDescriptorType, uint32_t> > dtypes = {
       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             1},
-      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,     3}
+      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,     4}
   };
 
   m_pBindings = std::make_shared<vk_utils::DescriptorMaker>(m_context->getDevice(), dtypes, 2);
@@ -208,7 +208,7 @@ void SimpleShadowmapRender::SetupDeferredPipeline()
 {
     std::vector<std::pair<VkDescriptorType, uint32_t> > dtypes = {
       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             1},
-      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,     2}
+      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,     3}
   };
 
   m_pDeferredBindings = std::make_shared<vk_utils::DescriptorMaker>(m_context->getDevice(), dtypes, 2);
@@ -440,7 +440,7 @@ void SimpleShadowmapRender::BuildCommandBufferSimple(VkCommandBuffer a_cmdBuff, 
     vkCmdBindPipeline(a_cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, m_gBufferCreationPipelne.getVkPipeline());
           vkCmdBindDescriptorSets(a_cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS,
               m_gBufferCreationPipelne.getVkPipelineLayout(), 0, 1, &vkSet, 0, VK_NULL_HANDLE);
-          DrawSceneCmd(a_cmdBuff, m_lightMatrix);
+          DrawSceneCmd(a_cmdBuff, m_worldViewProj);
   }
   
   {

@@ -37,13 +37,11 @@ void main(void)
     const vec4 wNorm = vec4(DecodeNormal(floatBitsToInt(vPosNorm.w)),         0.0f);
     const vec4 wTang = vec4(DecodeNormal(floatBitsToInt(vTexCoordAndTang.z)), 0.0f);
 
-    vOut.wPos     = (params.mModel * vec4(vPosNorm.xyz, 1.0f)).xyz;
+    vOut.wPos     = ((params.mModel) * vec4(vPosNorm.xyz, 1.0f)).xyz;
     vOut.wNorm    = normalize(mat3(transpose(inverse(params.mModel))) * wNorm.xyz);
     vOut.texCoord = vTexCoordAndTang.xy;
 
     gl_Position   = params.mProjView * vec4(vOut.wPos, 1.0);
-    
-    //gl_Position = vec4(gl_Position.xyz/gl_Position.w, 1);
 
     if (transpose(params.mModel) == mat4(0.999889, 0.0, -0.0149171, 0.0, 
                                         0.0, 1.0, 0.0, -1.27, 
