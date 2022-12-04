@@ -29,7 +29,7 @@ layout(push_constant) uniform params_t
 
 void main()
 {
-    gNorm = vec4(0.5f*(surf.wNorm) + vec3(0.5f), 1.0f);
+    gNorm = vec4((surf.wNorm), 1.0f);
 
     gAlbedoSpec = vec4(surf.color, 1.0f);
 }
