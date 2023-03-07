@@ -23,6 +23,26 @@ void SimpleShadowmapRender::AllocateResources()
     .imageUsage = vk::ImageUsageFlagBits::eDepthStencilAttachment
   });
 
+  VSM = m_context -> createImage(etna::Image::CreateInfo
+      {
+          .extent = vk::Extent3D{2048, 2048 ,1},
+          .name = "VSMtext",
+          .format = vk::Format::eR32G32Sfloat,
+          .imageUsage = vk::ImageUsageFlagBits::eColorAttachment | 
+            vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage
+      }
+  );
+
+  sqrVSM = m_context -> createImage(etna::Image::CreateInfo
+      {
+          .extent = vk::Extent3D{2048, 2048 ,1},
+          .name = "squareVSMtext",
+          .format = vk::Format::eR32G32Sfloat,
+          .imageUsage = vk::ImageUsageFlagBits::eColorAttachment | 
+            vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage
+      }
+  );
+
   shadowMap = m_context->createImage(etna::Image::CreateInfo
   {
     .extent = vk::Extent3D{2048, 2048, 1},
@@ -63,6 +83,8 @@ void SimpleShadowmapRender::DeallocateResources()
 {
   mainViewDepth.reset(); // TODO: Make an etna method to reset all the resources
   shadowMap.reset();
+  VSM.reset();
+  sqrVSM.reset();
   m_swapchain.Cleanup();
   vkDestroySurfaceKHR(GetVkInstance(), m_surface, nullptr);  
 
@@ -99,6 +121,8 @@ void SimpleShadowmapRender::loadShaders()
   etna::create_program("simple_material",
     {VK_GRAPHICS_BASIC_ROOT"/resources/shaders/simple_shadow.frag.spv", VK_GRAPHICS_BASIC_ROOT"/resources/shaders/simple.vert.spv"});
   etna::create_program("simple_shadow", {VK_GRAPHICS_BASIC_ROOT"/resources/shaders/simple.vert.spv"});
+  etna::create_program("vsm_comp", {VK_GRAPHICS_BASIC_ROOT"/resources/shaders/simple.comp.spv"});
+  etna::create_program("vsm_frag", {VK_GRAPHICS_BASIC_ROOT"/resources/shaders/vsm.frag.spv", VK_GRAPHICS_BASIC_ROOT"/resources/shaders/simple.vert.spv"});
 }
 
 void SimpleShadowmapRender::SetupSimplePipeline()
@@ -140,6 +164,18 @@ void SimpleShadowmapRender::SetupSimplePipeline()
           .depthAttachmentFormat = vk::Format::eD16Unorm
         }
     });
+
+  m_VSMPipeline = pipelineManager.createGraphicsPipeline("vsm_frag",
+      {
+          .vertexShaderInput = sceneVertexInputDesc,
+         .fragmentShaderOutput = 
+        {
+            .colorAttachmentFormats = {vk::Format::eR32G32Sfloat},
+            .depthAttachmentFormat = vk::Format::eD16Unorm
+        }
+      }
+  );
+  m_VSMdepthComp = pipelineManager.createComputePipeline("vsm_comp", {});
 }
 
 void SimpleShadowmapRender::DestroyPipelines()
@@ -188,11 +224,71 @@ void SimpleShadowmapRender::BuildCommandBufferSimple(VkCommandBuffer a_cmdBuff, 
   //// draw scene to shadowmap
   //
   {
-    etna::RenderTargetState renderTargets(a_cmdBuff, {2048, 2048}, {}, shadowMap);
+      if(m_uniforms.VSM)
+      {
+          {
+              etna::set_state(a_cmdBuff, sqrVSM.get(),
+                  vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                  vk::AccessFlagBits2::eColorAttachmentWrite,
+                  vk::ImageLayout::eColorAttachmentOptimal,
+                  vk::ImageAspectFlagBits::eColor
+                );
 
-    vkCmdBindPipeline(a_cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shadowPipeline.getVkPipeline());
-    DrawSceneCmd(a_cmdBuff, m_lightMatrix);
+              etna::RenderTargetState renderTargets(a_cmdBuff, { 2048, 2048 },
+                  { {sqrVSM.get(), sqrVSM.getView({})} }, shadowMap);
+              vkCmdBindPipeline(a_cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, m_VSMPipeline.getVkPipeline());
+              DrawSceneCmd(a_cmdBuff, m_lightMatrix);
+          }
+                   
+      }
+      else
+      {
+          etna::RenderTargetState renderTargets(a_cmdBuff, { 2048, 2048 }, {}, shadowMap);
+
+          vkCmdBindPipeline(a_cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, m_shadowPipeline.getVkPipeline());
+          DrawSceneCmd(a_cmdBuff, m_lightMatrix);
+      }
   }
+
+  if(m_uniforms.VSM)
+    {
+        etna::set_state(a_cmdBuff, sqrVSM.get(),
+            vk::PipelineStageFlagBits2::eComputeShader,
+            vk::AccessFlagBits2::eShaderRead,
+            vk::ImageLayout::eGeneral,
+            vk::ImageAspectFlagBits::eColor
+            );
+        etna::set_state(a_cmdBuff, VSM.get(),
+            vk::PipelineStageFlagBits2::eComputeShader,
+            vk::AccessFlagBits2::eShaderWrite,
+            vk::ImageLayout::eGeneral,
+            vk::ImageAspectFlagBits::eColor
+            );
+
+        auto vsmComp_info = etna::get_shader_program("vsm_comp");
+
+        auto set = etna::create_descriptor_set(vsmComp_info.getDescriptorLayoutId(0), a_cmdBuff,
+        {
+            etna::Binding {0, sqrVSM.genBinding(defaultSampler.get(), vk::ImageLayout::eGeneral)},
+            etna::Binding {1, VSM.genBinding(defaultSampler.get(), vk::ImageLayout::eGeneral)}
+        });
+
+        VkDescriptorSet vkSet = set.getVkSet();
+        etna::flush_barriers(a_cmdBuff);
+
+        vkCmdBindPipeline(a_cmdBuff, VK_PIPELINE_BIND_POINT_COMPUTE, m_VSMdepthComp.getVkPipeline());
+        vkCmdBindDescriptorSets(a_cmdBuff, VK_PIPELINE_BIND_POINT_COMPUTE, 
+            m_VSMdepthComp.getVkPipelineLayout(), 0 , 1, &vkSet, 0, VK_NULL_HANDLE );
+        vkCmdDispatch(a_cmdBuff, 2048 / 32 + 1, 2048 / 32 + 1, 1);
+
+        etna::set_state(a_cmdBuff, VSM.get(),
+            vk::PipelineStageFlagBits2::eFragmentShader,
+            vk::AccessFlagBits2::eShaderRead,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::ImageAspectFlagBits::eColor
+        );
+    } 
+
 
   //// draw final scene to screen
   //
@@ -202,7 +298,8 @@ void SimpleShadowmapRender::BuildCommandBufferSimple(VkCommandBuffer a_cmdBuff, 
     auto set = etna::create_descriptor_set(simpleMaterialInfo.getDescriptorLayoutId(0), a_cmdBuff,
     {
       etna::Binding {0, constants.genBinding()},
-      etna::Binding {1, shadowMap.genBinding(defaultSampler.get(), vk::ImageLayout::eShaderReadOnlyOptimal)}
+      etna::Binding {1, shadowMap.genBinding(defaultSampler.get(), vk::ImageLayout::eShaderReadOnlyOptimal)},
+      etna::Binding {2, VSM.genBinding(defaultSampler.get(), vk::ImageLayout::eShaderReadOnlyOptimal)},
     });
 
     VkDescriptorSet vkSet = set.getVkSet();

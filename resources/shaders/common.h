@@ -1,4 +1,4 @@
-#ifndef VK_GRAPHICS_BASIC_COMMON_H
+﻿#ifndef VK_GRAPHICS_BASIC_COMMON_H
 #define VK_GRAPHICS_BASIC_COMMON_H
 
 // GLSL-C++ datatype compatibility layer
@@ -49,6 +49,7 @@ struct UniformParams
   shader_float time;
   shader_vec3  baseColor;
   shader_bool  animateLightColor;
+  shader_bool VSM;
 };
 
 #endif // VK_GRAPHICS_BASIC_COMMON_H

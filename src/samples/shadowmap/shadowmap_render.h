@@ -50,6 +50,9 @@ private:
   etna::Sampler defaultSampler;
   etna::Buffer constants;
 
+  etna::Image VSM;
+  etna::Image sqrVSM;
+
   VkCommandPool    m_commandPool    = VK_NULL_HANDLE;
 
   struct
@@ -77,6 +80,9 @@ private:
 
   etna::GraphicsPipeline m_basicForwardPipeline {};
   etna::GraphicsPipeline m_shadowPipeline {};
+
+  etna::GraphicsPipeline m_VSMPipeline{};
+  etna::ComputePipeline m_VSMdepthComp{};
 
   std::shared_ptr<vk_utils::DescriptorMaker> m_pBindings = nullptr;
   
