@@ -1,4 +1,4 @@
-﻿#ifndef VK_GRAPHICS_BASIC_COMMON_H
+#ifndef VK_GRAPHICS_BASIC_COMMON_H
 #define VK_GRAPHICS_BASIC_COMMON_H
 
 // GLSL-C++ datatype compatibility layer
