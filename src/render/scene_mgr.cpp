@@ -42,7 +42,7 @@ bool SceneManager::LoadSceneXML(const std::string &scenePath, bool transpose)
     RUN_TIME_ERROR("LoadSceneXML error");
     return false;
   }
-
+  /*
   for(auto loc : hscene_main->MeshFiles())
   {
     auto meshId    = AddMeshFromFile(loc);
@@ -55,11 +55,65 @@ bool SceneManager::LoadSceneXML(const std::string &scenePath, bool transpose)
         InstanceMesh(meshId, instances[j]);
     }
   }
-
+  */
   for(auto cam : hscene_main->Cameras())
   {
     m_sceneCameras.push_back(cam);
   }
+
+  cmesh::SimpleMesh mesh = cmesh::SimpleMesh();
+  int resolution = 1025;
+  float step = 1.f / resolution;
+  float offsetX = 0.5f;
+  float offsetZ = 0.5f;
+
+  mesh.vPos4f.resize(4 * resolution * resolution);
+  mesh.vNorm4f.resize(4 * resolution * resolution);
+  mesh.vTexCoord2f.resize(2 * resolution * resolution);
+  mesh.vTang4f = std::vector<float>(mesh.vPos4f.size(), 0);
+
+  int posIdx = 0, normIdx = 0, texCoordIdx = 0;
+  for (int i = 0; i < resolution; ++i)
+  {
+    for (int j = 0; j < resolution; ++j)
+    {
+      mesh.vPos4f[posIdx++] = j * step - offsetX;
+      mesh.vPos4f[posIdx++] = 0.f;
+      mesh.vPos4f[posIdx++] = i * step - offsetZ;
+      mesh.vPos4f[posIdx++] = 1.f;
+
+      mesh.vNorm4f[normIdx++] = 0.;
+      mesh.vNorm4f[normIdx++] = 1.;
+      mesh.vNorm4f[normIdx++] = 0.;
+      mesh.vNorm4f[normIdx++] = 0.;
+
+      mesh.vTexCoord2f[texCoordIdx++] = (float)j * step;
+      mesh.vTexCoord2f[texCoordIdx++] = (float)i * step;
+    }
+  }
+  mesh.indices.resize(6 * (resolution - 1) * (resolution - 1));
+
+  int t = 0;
+  for (int i = 0; i < resolution - 1; ++i)
+  {
+    for (int j = 0; j < resolution - 1; ++j)
+    {
+      mesh.indices[t++] = i * resolution + j;
+      mesh.indices[t++] = i * resolution + j + 1;
+      mesh.indices[t++] = (i + 1) * resolution + j;
+
+      mesh.indices[t++] = (i + 1) * resolution + j;
+      mesh.indices[t++] = (i + 1) * resolution + j + 1;
+      mesh.indices[t++] = i * resolution + j + 1;
+    }
+  }
+
+  AddMeshFromData(mesh);
+
+  float3 tesselatedMeshPos(0.f, 0.f, 0.f);
+  float tesselatedMeshScale  = 25.f;
+  LiteMath::float4x4 meshMat = LiteMath::translate4x4(tesselatedMeshPos) * LiteMath::scale4x4(float3(tesselatedMeshScale));
+  m_instanceMatrices.push_back(meshMat);
 
   LoadGeoDataOnGPU();
   hscene_main = nullptr;
