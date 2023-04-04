@@ -48,7 +48,15 @@ struct UniformParams
   shader_vec3  lightPos;
   shader_float time;
   shader_vec3  baseColor;
-  shader_bool  animateLightColor;
+  shader_bool animateLightColor;
+  shader_vec3 eyePos;
+};
+
+struct NoiseData
+{
+  shader_vec3 scale;
+  shader_float extinction;
+  shader_vec3 semiAxes;
 };
 
 #endif // VK_GRAPHICS_BASIC_COMMON_H

@@ -50,6 +50,21 @@ private:
   etna::Sampler defaultSampler;
   etna::Buffer constants;
 
+  etna::Image postFx;
+  etna::Image clearTerrain;
+  etna::Sampler linearSampler;
+  etna::Buffer noiseData;
+  etna::Buffer boxIndexBuffer;
+
+  const std::array<uint16_t, 36> boxIndices  = {
+    0, 3, 1, 0, 2, 3, 0, 1, 5, 0, 5, 4, 0, 4, 6, 0, 6, 2, 1, 7, 5, 1, 3, 7, 4, 5, 7, 4, 7, 6, 2, 7, 3, 2, 6, 7};
+
+  float m_extinction  = 0.5f;
+  float3 m_noiseScale = { 0.3f, 1.f, 0.3f };
+  float3 m_semiAxes   = { 7.f, 5.f, 7.f };
+  NoiseData m_noiseData{};
+  void *m_noiseMappedMem = nullptr;
+
   VkCommandPool    m_commandPool    = VK_NULL_HANDLE;
 
   struct
@@ -80,6 +95,8 @@ private:
 
   etna::GraphicsPipeline m_basicForwardPipeline {};
   etna::GraphicsPipeline m_shadowPipeline {};
+  etna::GraphicsPipeline m_fogPipeline{};
+  etna::GraphicsPipeline m_postFxPipeline{};
 
   std::shared_ptr<vk_utils::DescriptorMaker> m_pBindings = nullptr;
   
@@ -139,6 +156,7 @@ private:
   void BuildCommandBufferSimple(VkCommandBuffer a_cmdBuff, VkImage a_targetImage, VkImageView a_targetImageView);
 
   void DrawSceneCmd(VkCommandBuffer a_cmdBuff, const float4x4& a_wvp);
+  void DrawBox(VkCommandBuffer a_cmdBuff, const float4x4 &a_wvp);
 
   void loadShaders();
 
