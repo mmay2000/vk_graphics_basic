@@ -47,8 +47,10 @@ private:
   etna::GlobalContext* m_context;
   etna::Image mainViewDepth;
   etna::Image shadowMap;
-  etna::Sampler defaultSampler;
   etna::Buffer constants;
+
+  etna::Image bigImage;
+  etna::Sampler linearSampler;
 
   VkCommandPool    m_commandPool    = VK_NULL_HANDLE;
 
@@ -78,6 +80,8 @@ private:
   etna::GraphicsPipeline m_basicForwardPipeline {};
   etna::GraphicsPipeline m_shadowPipeline {};
 
+  etna::GraphicsPipeline m_SSAAPipeline{};
+
   std::shared_ptr<vk_utils::DescriptorMaker> m_pBindings = nullptr;
   
   VkSurfaceKHR m_surface = VK_NULL_HANDLE;
@@ -104,6 +108,9 @@ private:
   {
     bool drawFSQuad = false;
   } m_input;
+
+  bool SSAA = false;
+  uint32_t scale = 1;
 
   /**
   \brief basic parameters that you usually need for shadow mapping
