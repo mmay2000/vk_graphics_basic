@@ -49,6 +49,9 @@ struct UniformParams
   shader_float time;
   shader_vec3  baseColor;
   shader_bool  animateLightColor;
+  shader_float lightBrightness;
+  shader_float grayLevel;
+  shader_bool toneMapping;
 };
 
 #endif // VK_GRAPHICS_BASIC_COMMON_H
