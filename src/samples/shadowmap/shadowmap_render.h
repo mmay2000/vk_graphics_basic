@@ -49,6 +49,13 @@ private:
   etna::Image shadowMap;
   etna::Sampler defaultSampler;
   etna::Buffer constants;
+  etna::Image positionMap;
+  etna::Image normalMap;
+  etna::Image albedoMap;
+  etna::Image rawSSAO;
+  etna::Image blurredSSAO;
+  etna::Buffer ssaoSamples;
+  etna::Buffer ssaoNoise;
 
   VkCommandPool    m_commandPool    = VK_NULL_HANDLE;
 
@@ -67,6 +74,7 @@ private:
   {
     float4x4 projView;
     float4x4 model;
+    uint albedoId;
   } pushConst2M;
 
   float4x4 m_worldViewProj;
@@ -77,6 +85,10 @@ private:
 
   etna::GraphicsPipeline m_basicForwardPipeline {};
   etna::GraphicsPipeline m_shadowPipeline {};
+  etna::GraphicsPipeline m_deferredPipeline{};
+  etna::GraphicsPipeline m_finalDeferredPipeline{};
+  etna::GraphicsPipeline m_ssaoPipeline{};
+  etna::ComputePipeline m_ssaoBlurPipeline{};
 
   std::shared_ptr<vk_utils::DescriptorMaker> m_pBindings = nullptr;
   
@@ -87,7 +99,12 @@ private:
   uint32_t m_width  = 1024u;
   uint32_t m_height = 1024u;
   uint32_t m_framesInFlight = 2u;
-  bool m_vsync = false;
+  uint32_t m_ssaoSampleSize = 64;
+  uint32_t m_ssaoNoiseSize  = 16;
+  float m_ssaoRadius        = 0.1;
+  bool m_vsync              = false;
+  bool m_ssao               = true;
+  bool m_blur_ssao          = true;
 
   vk::PhysicalDeviceFeatures m_enabledDeviceFeatures = {};
   std::vector<const char*> m_deviceExtensions;

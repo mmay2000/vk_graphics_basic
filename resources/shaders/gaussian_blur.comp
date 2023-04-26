@@ -1,0 +1,140 @@
+#version 430
+
+layout( local_size_x = 32, local_size_y = 32 ) in;
+
+const uint kernelSize = 11;
+const uint kernelRadius = kernelSize/2;
+const float coefsSet[kernelSize] = {0.000006773449998f,	0.0004917205454f, 0.01377499895f, 0.148911963f,	0.621201359f, 1.0f,
+                                    0.621201359f, 0.148911963f, 0.01377499895f, 0.0004917205454f, 0.000006773449998f};
+
+layout (rgba32f, binding = 0) uniform readonly  image2D srcImg;
+layout (rgba32f, binding = 1) uniform writeonly image2D dstImg;
+layout (rgba32f, binding = 2) uniform readonly image2D positionMap;
+
+shared vec3[42][42] ImagePart;
+
+
+void main() 
+{
+    
+    uvec2 id = gl_GlobalInvocationID.xy;
+    uvec2 srcSize = imageSize(srcImg);
+    if ((id.x < srcSize.x)&&(id.y < srcSize.y))
+    {
+        
+        uvec2 local_id = gl_LocalInvocationID.xy;
+        uvec2 group_id = gl_WorkGroupID.xy;
+        uvec2 group_size = gl_WorkGroupSize.xy;
+
+        ImagePart[local_id.y+kernelRadius][local_id.x+kernelRadius] = imageLoad(srcImg, ivec2(id)).rgb;
+
+        if (local_id.x < kernelRadius)                                             
+        {
+            if (id.x < kernelRadius)
+                ImagePart[local_id.y+kernelRadius][local_id.x] = vec3(0.0f);
+            else
+                ImagePart[local_id.y+kernelRadius][local_id.x] = imageLoad(srcImg, ivec2(id.x-kernelRadius, id.y)).rgb;
+        }
+
+        if (local_id.y < kernelRadius)                                             
+        {
+            if (id.y < kernelRadius)
+                ImagePart[local_id.y][local_id.x+kernelRadius] = vec3(0.0f);
+            else
+                ImagePart[local_id.y][local_id.x+kernelRadius] = imageLoad(srcImg, ivec2(id.x, id.y-kernelRadius)).rgb;
+        }
+
+        if (local_id.x < kernelRadius && local_id.y < kernelRadius)                           
+        {
+            if (id.x < kernelRadius || id.y < kernelRadius)
+                ImagePart[local_id.y][local_id.x] = vec3(0.0f);
+            else
+                ImagePart[local_id.y][local_id.x] = imageLoad(srcImg, ivec2(id.x-kernelRadius, id.y-kernelRadius)).rgb;
+        }
+
+        if (local_id.x > group_size.x-kernelRadius-1)                                  
+        {
+            if (id.x+kernelRadius > srcSize.x-1)
+                ImagePart[local_id.y+kernelRadius][local_id.x+2*kernelRadius] = vec3(0.0f);
+            else
+                ImagePart[local_id.y+kernelRadius][local_id.x+2*kernelRadius] = imageLoad(srcImg, ivec2(id.x+kernelRadius, id.y)).rgb;
+        }
+
+        if (local_id.y > group_size.y-kernelRadius-1)                                  
+        {
+            if (id.y+kernelRadius > srcSize.y-1)
+                ImagePart[local_id.y+2*kernelRadius][local_id.x+kernelRadius] = vec3(0.0f);
+            else
+                ImagePart[local_id.y+2*kernelRadius][local_id.x+kernelRadius] = imageLoad(srcImg, ivec2(id.x, id.y+kernelRadius)).rgb;
+        }
+
+        if (local_id.x > group_size.x-kernelRadius-1 && local_id.y > group_size.y-kernelRadius-1)     
+        {
+            if (id.x+kernelRadius > srcSize.x-1 || id.y+kernelRadius > srcSize.y-1)
+                ImagePart[local_id.y+2*kernelRadius][local_id.x+2*kernelRadius] = vec3(0.0f);
+            else
+                ImagePart[local_id.y+2*kernelRadius][local_id.x+2*kernelRadius] = imageLoad(srcImg, ivec2(id.x+kernelRadius, id.y+kernelRadius)).rgb;
+        }
+
+        if (local_id.x > group_size.x-kernelRadius-1 && local_id.y < kernelRadius)                
+        {
+            if (id.x+kernelRadius > srcSize.x-1 || id.y < kernelRadius)
+                ImagePart[local_id.y][local_id.x+2*kernelRadius] = vec3(0.0f);
+            else
+                ImagePart[local_id.y][local_id.x+2*kernelRadius] = imageLoad(srcImg, ivec2(id.x+kernelRadius, id.y-kernelRadius)).rgb;
+        }
+
+        if (local_id.x < kernelRadius && local_id.y > group_size.y-kernelRadius-1)                
+        {
+            if (id.x < kernelRadius || id.y+kernelRadius > srcSize.y-1)
+                ImagePart[local_id.y+2*kernelRadius][local_id.x] = vec3(0.0f);
+            else
+                ImagePart[local_id.y+2*kernelRadius][local_id.x] = imageLoad(srcImg, ivec2(id.x-kernelRadius, id.y+kernelRadius)).rgb;
+        }
+
+        barrier();        
+
+        vec3 filtredValue1 = vec3(0.0);
+        float normalizationTerm = 0.0;
+        int start = -5;
+        float depth = imageLoad(positionMap, ivec2(local_id)).z;
+        for(int i = start; i < 6; ++i)
+        {
+            float sampleDepth = imageLoad(positionMap, ivec2(local_id.x + i, local_id.y)).z;
+            if (abs(sampleDepth - depth) <= 0.1)
+            {
+                if ((local_id.x + i + kernelRadius < 42)&&(local_id.x + i + kernelRadius >= 0))
+                {
+                    filtredValue1 += ImagePart[local_id.x + i + kernelRadius][local_id.y + kernelRadius] * coefsSet[kernelRadius + i];
+                    normalizationTerm += coefsSet[kernelRadius + i];
+                }
+            }
+        }
+        filtredValue1/=normalizationTerm;
+        barrier();
+        ImagePart[local_id.x + kernelRadius][local_id.y + kernelRadius] = (filtredValue1);
+      
+        barrier();
+        vec3 filtredValue2 = vec3(0.0);
+        normalizationTerm = 0.0;
+        depth = imageLoad(positionMap, ivec2(local_id)).z;
+        for(int i = start; i < 6; ++i)
+            {
+                float sampleDepth = imageLoad(positionMap, ivec2(local_id.x, local_id.y + i)).z;
+                if (abs(sampleDepth - depth) <= 0.1)
+                {
+                    
+                    if ((local_id.y + i + kernelRadius < 42)&&(local_id.y + i + kernelRadius >= 0))
+                    {
+                        normalizationTerm += coefsSet[kernelRadius + i];
+                        filtredValue2 += ImagePart[local_id.x + kernelRadius][local_id.y + i + kernelRadius] * coefsSet[kernelRadius + i];
+                    }
+                }
+            }
+        filtredValue2/=normalizationTerm;
+        barrier();
+        ImagePart[local_id.x + kernelRadius][local_id.y + kernelRadius] = (filtredValue2);
+
+        imageStore(dstImg, ivec2(id), vec4(ImagePart[local_id.y + kernelRadius][local_id.x + kernelRadius], 1.0));
+     }
+}
