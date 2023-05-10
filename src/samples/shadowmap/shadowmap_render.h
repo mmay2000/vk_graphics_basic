@@ -101,7 +101,7 @@ private:
   uint32_t m_framesInFlight = 2u;
   uint32_t m_ssaoSampleSize = 64;
   uint32_t m_ssaoNoiseSize  = 16;
-  float m_ssaoRadius        = 0.1;
+  float m_ssaoRadius        = 0.5;
   bool m_vsync              = false;
   bool m_ssao               = true;
   bool m_blur_ssao          = true;

@@ -99,9 +99,9 @@ void SimpleShadowmapRender::AllocateResources()
        randomFloats(generator) * 2.0f - 1.0f,
        randomFloats(generator),
        0.0f };
-    float scale    = i / m_ssaoSampleSize;
+    float scale   = i / m_ssaoSampleSize * m_ssaoSampleSize;
     //lerp
-    scale          = 0.1f + scale*scale * 0.9f;
+    scale          = 0.1f + scale*scale * 1.f;
     float4 nSample = LiteMath::normalize(sample) * scale;
     ssaoSamplesVec.push_back(nSample);
   } 
