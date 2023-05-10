@@ -56,6 +56,7 @@ void SimpleShadowmapRender::UpdateUniformBuffer(float a_time)
   m_uniforms.ssaoNoiseSize  = m_ssaoNoiseSize;
   m_uniforms.width          = m_width;
   m_uniforms.height         = m_height;
+  m_uniforms.indirectIlluminationEnabled = m_indirect_light;
 
   memcpy(m_uboMappedMem, &m_uniforms, sizeof(m_uniforms));
 }

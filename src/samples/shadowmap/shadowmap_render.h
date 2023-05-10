@@ -56,6 +56,10 @@ private:
   etna::Image blurredSSAO;
   etna::Buffer ssaoSamples;
   etna::Buffer ssaoNoise;
+  etna::Image lightViewWposition;
+  etna::Image lightViewWnormal;
+  etna::Image flux;
+  etna::Buffer rsmSamples;
 
   VkCommandPool    m_commandPool    = VK_NULL_HANDLE;
 
@@ -105,6 +109,7 @@ private:
   bool m_vsync              = false;
   bool m_ssao               = true;
   bool m_blur_ssao          = true;
+  bool m_indirect_light     = true;
 
   vk::PhysicalDeviceFeatures m_enabledDeviceFeatures = {};
   std::vector<const char*> m_deviceExtensions;

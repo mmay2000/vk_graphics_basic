@@ -44,7 +44,7 @@ using shader_bool  = LiteMath::uint;
 
 struct UniformParams
 {
-  shader_mat4  lightMatrix;
+  shader_mat4 lightMatrix;
   shader_mat4 view;
   shader_mat4 viewInverse;
   shader_mat4 proj;
@@ -57,6 +57,9 @@ struct UniformParams
   shader_float ssaoRadius;
   shader_uint width;
   shader_uint height;
+  shader_float rsmRmax;
+  shader_bool indirectIlluminationEnabled;
+  shader_float indirectIlluminationIntensity;
 };
 
 #endif // VK_GRAPHICS_BASIC_COMMON_H
