@@ -17,6 +17,7 @@ void SimpleShadowmapRender::SetupGUIElements()
     ImGui::Checkbox("SSAO", &m_ssao);
     ImGui::Checkbox("Blur SSAO", &m_blur_ssao);
     ImGui::SliderFloat("SSAO radius", &m_ssaoRadius, 0.05, 2.0);
+    ImGui::Checkbox("Subsurface Scattering", reinterpret_cast<bool *>(&m_uniforms.sssEnabled));
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
